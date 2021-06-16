@@ -5,7 +5,7 @@
     <v-btn @click="loginBinance">Binance login</v-btn>
     <br />
     <br />
-    <v-row v-if="multi" >
+    <v-row v-if="multi">
       <v-col v-for="(item, index) in multipleList" :key="index">
         <v-card class="mx-auto" max-width="344">
           <v-card-text>
@@ -22,7 +22,7 @@
         </v-card>
       </v-col>
     </v-row>
-    <v-row v-else-if="dataHex.hexID !== undefined" >
+    <v-row v-else-if="dataHex.hexID !== undefined">
       <v-col>
         <v-card class="mx-auto" max-width="344">
           <v-card-text>
@@ -30,7 +30,7 @@
             <p class="display-1 text--primary">{{ dataHex.hexID }}</p>
             <div>Place</div>
             <p class="display-1 text--primary">{{ dataHex.location }}</p>
-            <p>Cordenates: </p>
+            <p>Cordenates:</p>
             <div class="text--primary">
               {{ dataHex.cordenates }}
             </div>
@@ -60,13 +60,16 @@ export default {
   methods: {
     loginMetaMask() {
       window.ethereum.request({ method: "eth_requestAccounts" });
-      console.log(window.ethereum.selectedAddress)
+      console.log(window.ethereum.selectedAddress);
     },
     loginBinance() {
       window.BinanceChain.request({ method: "eth_accounts" });
     },
   },
   mounted() {
+    var accounts = window.ethereum.request({ method: "eth_requestAccounts" });
+    if (accounts == undefined) alert("MetaMask not Conected  :(");
+
     var ctx = this;
     const mapboxgl = require("mapbox-gl");
     // const MapboxGeocoder = require("mapbox-gl-geocoder"); unstall
@@ -259,10 +262,10 @@ export default {
         var info = res.features[0];
         var data = {
           hexID: clicked_hex_id,
-          cordenates: (`Lng: ${e.lngLat["lng"]} \nLat: ${e.lngLat["lat"]}`),
+          cordenates: `Lng: ${e.lngLat["lng"]} \nLat: ${e.lngLat["lat"]}`,
           location: info.place_name,
         };
-        ctx.dataHex = data
+        ctx.dataHex = data;
         if (ctx.multi) {
           let listID = ctx.multipleList.map((i) => i.hexID);
           if (listID.includes(clicked_hex_id)) {
