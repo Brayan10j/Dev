@@ -85,13 +85,36 @@
     >
       <span>&copy; {{ new Date().getFullYear() }}</span>
     </v-footer>
+    <v-dialog
+      v-model="dialogLoginMetaMask"
+      persistent
+      max-width="400"
+    >
+    <v-card>
+        <v-card-title class="text-h5">
+          Metamask not conected !!
+        </v-card-title>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="loginMetaMask"
+          >
+            Connect
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-app>
+
+  
 </template>
 
 <script>
 export default {
   data () {
     return {
+      dialogLoginMetaMask: false,
       clipped: false,
       drawer: false,
       fixed: false,
@@ -112,6 +135,28 @@ export default {
       rightDrawer: false,
       title: 'SERVER'
     }
+  },
+  methods: {
+    async loginMetaMask() {
+      try {
+          await window.ethereum.request({ method: "eth_requestAccounts" });
+          this.dialogLoginMetaMask = !this.dialogLoginMetaMask
+        } catch (error) {
+          alert(error.message)
+          this.dialogLoginMetaMask = true
+        }
+    },
+    loginBinance() {
+      window.BinanceChain.request({ method: "eth_accounts" });
+    },
+  },
+  mounted(){
+    if (typeof window.ethereum !== "undefined") {
+      console.log("MetaMask is installed!");
+    }else{
+      alert("MetaMask not installed  :(")
+    }   
+    if (window.ethereum.selectedAddress == undefined) this.loginMetaMask()
   }
 }
 </script>

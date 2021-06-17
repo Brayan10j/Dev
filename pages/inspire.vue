@@ -25,7 +25,7 @@ export default {
       single: null,
       singleBuffer: null,
       multiple: null,
-      objectURL: "x",
+      objectURL: null,
     };
   },
   methods: {
@@ -43,6 +43,7 @@ export default {
       const abi = require("../static/ABI");
       //var ipfs = await IPFS.create();
       try {
+        await window.ethereum.request({ method: "eth_requestAccounts" });
         var web3 = new Web3(Web3.givenProvider);
         let userAccount = web3.currentProvider.selectedAddress;
         var contractAddress = "0xDCCfA64e5Be095834C79EE8a3A4F83855BfB9cB8";

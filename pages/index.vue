@@ -67,9 +67,6 @@ export default {
     },
   },
   mounted() {
-    var accounts = window.ethereum.request({ method: "eth_requestAccounts" });
-    if (accounts == undefined) alert("MetaMask not Conected  :(");
-
     var ctx = this;
     const mapboxgl = require("mapbox-gl");
     // const MapboxGeocoder = require("mapbox-gl-geocoder"); unstall
