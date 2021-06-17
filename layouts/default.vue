@@ -111,10 +111,11 @@
 </template>
 
 <script>
+import { h3ToFeature } from 'geojson2h3';
 export default {
   data () {
     return {
-      dialogLoginMetaMask: false,
+      dialogLoginMetaMask: true,
       clipped: false,
       drawer: false,
       fixed: false,
@@ -140,7 +141,7 @@ export default {
     async loginMetaMask() {
       try {
           await window.ethereum.request({ method: "eth_requestAccounts" });
-          this.dialogLoginMetaMask = !this.dialogLoginMetaMask
+          this.dialogLoginMetaMask = false
         } catch (error) {
           alert(error.message)
           this.dialogLoginMetaMask = true
