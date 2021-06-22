@@ -1,11 +1,5 @@
 <template>
-  <div>
-    <v-file-input
-      label="File single  input"
-      v-model="single"
-      @change="getFile"
-    ></v-file-input>
-    <v-img :src="objectURL" max-width="400px" aspect-ratio="2"></v-img>
+  <v-container>
     <!--
     <v-file-input
       multiple
@@ -13,8 +7,88 @@
       v-model="multiple"
     ></v-file-input>
     -->
-    <v-btn right @click="getHashIPFS">Create NFT</v-btn>
-  </div>
+    <v-btn right @click="dialogCreateNFT = true">Create NFT</v-btn>
+    <v-dialog v-model="dialogCreateNFT" persistent max-width="900px">
+      <v-card>
+        <v-card-title>
+          <span class="text-h5">Create NFT</span>
+        </v-card-title>
+        <v-card-text>
+          <v-container>
+            <v-row>
+              <v-col cols="8">
+                <v-file-input
+                  label="File single  input"
+                  v-model="single"
+                  @change="getFile"
+                ></v-file-input>
+
+                <v-col cols="12">
+                  <v-text-field
+                    label="Name"
+                    v-model="name"
+                    required
+                  ></v-text-field>
+                </v-col>
+                <v-col cols="12">
+                  <v-textarea label="Description"></v-textarea>
+                </v-col>
+                <v-col cols="12">
+                  <v-select
+                    :items="[
+                      '1 category',
+                      '2 category',
+                      '3 category',
+                      '4 category',
+                    ]"
+                    label="Category"
+                    required
+                  ></v-select>
+                </v-col>
+                <v-col cols="12">
+                  <v-text-field label="Price (ETH)" v-model="price" required></v-text-field>
+                </v-col>
+                <v-col cols="12">
+                  <v-slider
+                    label="Royalies"
+                    max="50"
+                    thumb-color="red"
+                    thumb-label="always"
+                  >
+                    <template v-slot:thumb-label="{ value }">
+                      {{ value }} %
+                    </template></v-slider
+                  >
+                </v-col>
+              </v-col>
+              <v-col>
+                <v-card class="mx-auto" max-width="344">
+                  <v-img
+                    :src="objectURL"
+                    max-width="300px"
+                    aspect-ratio="2"
+                  ></v-img>
+
+                  <v-card-title>
+                    {{ name }}
+                  </v-card-title>
+
+                  <v-card-subtitle> {{price}} (ETH) </v-card-subtitle>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-container>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="dialogCreateNFT = false">
+            Close
+          </v-btn>
+          <v-btn color="blue darken-1" text @click="createNFT"> Save </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
 </template>
 
 <script>
@@ -26,6 +100,10 @@ export default {
       singleBuffer: null,
       multiple: null,
       objectURL: null,
+      dialogCreateNFT: false,
+      range: [0, 40],
+      name: "",
+      price: "0"
     };
   },
   methods: {
@@ -37,7 +115,7 @@ export default {
         this.singleBuffer = e.target.result;
       };
     },
-    async getHashIPFS() {
+    async createNFT() {
       const IPFS = require("ipfs-core");
       const Web3 = require("web3");
       const abi = require("../static/ABI");
