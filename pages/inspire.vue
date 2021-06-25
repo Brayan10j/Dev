@@ -17,11 +17,29 @@
           <v-container>
             <v-row>
               <v-col cols="8">
-                <v-file-input
-                  label="File single  input"
-                  v-model="single"
-                  @change="getFile"
-                ></v-file-input>
+                <v-tabs v-model="tab">
+                  <v-tab v-for="item in items" :key="item">
+                    {{ item.name }}
+                  </v-tab>
+                </v-tabs>
+                <v-tabs-items v-model="tab">
+                  <v-tab-item v-for="item in items" :key="item">
+                    <v-file-input
+                      label="File input"
+                      :accept="item.accepts"
+                      v-model="single"
+                      @change="getFile"
+                    ></v-file-input>
+                    {{item.text}}
+
+                  <br/>
+                  <v-file-input
+                      v-if="item.name != 'Image'"
+                      label="Cover image "
+                      accept=".jpeg, .jpg, .png, .gif"
+                    ></v-file-input>
+                  </v-tab-item>
+                </v-tabs-items>
 
                 <v-col cols="12">
                   <v-text-field
@@ -46,7 +64,11 @@
                   ></v-select>
                 </v-col>
                 <v-col cols="12">
-                  <v-text-field label="Price (ETH)" v-model="price" required></v-text-field>
+                  <v-text-field
+                    label="Price (ETH)"
+                    v-model="price"
+                    required
+                  ></v-text-field>
                 </v-col>
                 <v-col cols="12">
                   <v-slider
@@ -73,7 +95,7 @@
                     {{ name }}
                   </v-card-title>
 
-                  <v-card-subtitle> {{price}} (ETH) </v-card-subtitle>
+                  <v-card-subtitle> {{ price }} (ETH) </v-card-subtitle>
                 </v-card>
               </v-col>
             </v-row>
@@ -103,7 +125,30 @@ export default {
       dialogCreateNFT: false,
       range: [0, 40],
       name: "",
-      price: "0"
+      price: "0",
+      tab: null,
+      items: [
+        {
+          name: "Image",
+          accepts: ".jpeg, .jpg, .png, .gif",
+          text: "jpeg, jpg, png, gif.",
+        },
+        {
+          name: "Video",
+          accepts: ".mp4, .x-m4v",
+          text: "mp4, x-m4v.",
+        },
+        {
+          name: "Music",
+          accepts: ".mp3",
+          text: "mp3.",
+        },
+        {
+          name: "3D",
+          accepts: ".obj, .glb",
+          text: "obj, glb.",
+        },
+      ],
     };
   },
   methods: {
