@@ -17,13 +17,22 @@
           <v-container>
             <v-row>
               <v-col cols="8">
+                <v-btn @click="singleNFT = true">Single</v-btn>
+                <v-btn @click="multipleNFT = true">Multiple</v-btn>
+                <v-col v-if="multipleNFT" cols="12">
+                  <v-text-field
+                    label="Quantity"
+                    v-model="quantity"
+                    required
+                  ></v-text-field>
+                </v-col>
                 <v-tabs v-model="tab">
-                  <v-tab v-for="item in items" :key="item">
+                  <v-tab v-for="item in items" :key="item.name">
                     {{ item.name }}
                   </v-tab>
                 </v-tabs>
                 <v-tabs-items v-model="tab">
-                  <v-tab-item v-for="item in items" :key="item">
+                  <v-tab-item v-for="item in items" :key="item.name">
                     <v-file-input
                       label="File input"
                       :accept="item.accepts"
@@ -118,6 +127,8 @@ export default {
   components: {},
   data() {
     return {
+      singleNFT : false,
+      multipleNFT : false,
       single: null,
       singleBuffer: null,
       multiple: null,
@@ -125,6 +136,7 @@ export default {
       dialogCreateNFT: false,
       range: [0, 40],
       name: "",
+      quantity: "1",
       price: "0",
       tab: null,
       items: [
