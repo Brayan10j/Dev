@@ -9,6 +9,12 @@
     -->
     <v-btn right @click="dialogCreateNFT = true">Create NFT</v-btn>
     <v-dialog v-model="dialogCreateNFT" persistent max-width="900px">
+      <v-overlay :value="overlay">
+      <v-progress-circular
+        indeterminate
+        size="64"
+      ></v-progress-circular>
+    </v-overlay>
       <v-card>
         <v-card-title>
           <span class="text-h5">Create NFT</span>
@@ -22,7 +28,7 @@
                 <v-col v-if="multipleNFT" cols="12">
                   <v-text-field
                     label="Quantity"
-                    v-model="quantity"
+                    v-model.number="quantity"
                     required
                   ></v-text-field>
                 </v-col>
@@ -85,12 +91,14 @@
                     max="50"
                     thumb-color="red"
                     thumb-label="always"
+                    v-model.number="royalty"
                   >
                     <template v-slot:thumb-label="{ value }">
                       {{ value }} %
                     </template></v-slider
                   >
                 </v-col>
+                {{royalty}}
               </v-col>
               <v-col>
                 <v-card class="mx-auto" max-width="344">
@@ -127,6 +135,7 @@ export default {
   components: {},
   data() {
     return {
+      overlay : false,
       singleNFT : false,
       multipleNFT : false,
       single: null,
@@ -136,8 +145,9 @@ export default {
       dialogCreateNFT: false,
       range: [0, 40],
       name: "",
-      quantity: "1",
+      quantity: 1,
       price: "0",
+      royalty: 0,
       tab: null,
       items: [
         {
@@ -178,18 +188,22 @@ export default {
       const abi = require("../static/ABI");
       //var ipfs = await IPFS.create();
       try {
+        this.overlay = true
         await window.ethereum.request({ method: "eth_requestAccounts" });
         var web3 = new Web3(Web3.givenProvider);
         let userAccount = web3.currentProvider.selectedAddress;
-        var contractAddress = "0xDCCfA64e5Be095834C79EE8a3A4F83855BfB9cB8";
+        var contractAddress = "0x85Aee1B896750B62e32f4271b66324Df3775A5A9";
         var contract = new web3.eth.Contract(abi.default, contractAddress);
         //const results = await ipfs.add(this.singleBuffer);
-        await contract.methods
-          .awardItem(userAccount, this.objectURL)
+        let res = await contract.methods
+          .multiple(userAccount, this.objectURL, this.quantity, this.royalty )
           .send({ from: userAccount });
-        alert("NFT creado");
+        this.overlay = false
+        alert("NFT creado , you trasnsaction hash is: "+ res.transactionHash );
       } catch (error) {
+        this.overlay = false
         alert(error);
+        
       }
     },
   },
