@@ -98,7 +98,6 @@
                     </template></v-slider
                   >
                 </v-col>
-                {{royalty}}
               </v-col>
               <v-col>
                 <v-card class="mx-auto" max-width="344">
