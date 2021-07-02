@@ -192,7 +192,7 @@ export default {
         await window.ethereum.request({ method: "eth_requestAccounts" });
         var web3 = new Web3(Web3.givenProvider);
         let userAccount = web3.currentProvider.selectedAddress;
-        var contractAddress = "0x85Aee1B896750B62e32f4271b66324Df3775A5A9";
+        var contractAddress = "0xd705aCe869e4530c9Add3ff4317CBd2F918bC0F8";
         var contract = new web3.eth.Contract(abi.default, contractAddress);
         //const results = await ipfs.add(this.singleBuffer);
         let res = await contract.methods
