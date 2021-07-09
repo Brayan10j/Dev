@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts@4.1.0/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts@4.1.0/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts@4.1.0/access/Ownable.sol";
+import "@openzeppelin/contracts@4.1.0/utils/Counters.sol";
+import "./Royalities.sol";
+
+contract MyToken is Ownable, ERC721URIStorage  {
+    using Counters for Counters.Counter;
+
+    Counters.Counter private _tokenIdCounter;
+    
+    // Mapping from token ID to creator address
+    mapping(uint256 => address) private _creators;
+    
+    // Mapping from token ID to royalties
+    mapping(uint256 => uint) private _royalties;
+
+    constructor() ERC721("MyToken", "MTK") {}
+
+
+    function awardItem(address player, string memory tokenURI, uint royalties)
+        public onlyOwner
+        returns (uint256)
+    {
+        _tokenIdCounter.increment();
+
+        uint256 newItemId = _tokenIdCounter.current();
+        _safeMint(player, newItemId);
+        
+        _royalties[newItemId] = royalties;
+        _creators[newItemId] = player;
+        _setTokenURI(newItemId, tokenURI);
+
+        return newItemId;
+    }
+    function multiple(address player, string memory tokenURI, uint quantity, uint royalties)
+        public onlyOwner
+        
+    {
+     
+        for (uint i =0; i<quantity; i++) {
+            awardItem(player,tokenURI, royalties);
+            
+        }
+        
+    }
+    function royaltyInfo(uint256 tokenId) public view returns (uint, address){
+        require(_exists(tokenId));
+        return (_royalties[tokenId], _creators[tokenId]);
+    }
+    function _exists(uint256 tokenId) internal view override returns (bool) {
+        return (_royalties[tokenId] != 0 && _creators[tokenId] != address(0));
+    }
+}
