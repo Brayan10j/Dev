@@ -10,11 +10,8 @@
     <v-btn right @click="dialogCreateNFT = true">Create NFT</v-btn>
     <v-dialog v-model="dialogCreateNFT" persistent max-width="900px">
       <v-overlay :value="overlay">
-      <v-progress-circular
-        indeterminate
-        size="64"
-      ></v-progress-circular>
-    </v-overlay>
+        <v-progress-circular indeterminate size="64"></v-progress-circular>
+      </v-overlay>
       <v-card>
         <v-card-title>
           <span class="text-h5">Create NFT</span>
@@ -45,21 +42,27 @@
                       v-model="single"
                       @change="getFile"
                     ></v-file-input>
-                    {{item.text}}
+                    {{ item.text }}
 
-                  <br/>
-                  <v-file-input
+                    <br />
+                    <v-file-input
                       v-if="item.name != 'Image'"
                       label="Cover image "
                       accept=".jpeg, .jpg, .png, .gif"
                     ></v-file-input>
                   </v-tab-item>
                 </v-tabs-items>
-
+                <v-col cols="12">
+                  <v-text-field
+                    label="Name (Author)"
+                    v-model="nftJSON.nameAuthor"
+                    required
+                  ></v-text-field>
+                </v-col>
                 <v-col cols="12">
                   <v-text-field
                     label="Name"
-                    v-model="name"
+                    v-model="nftJSON.name"
                     required
                   ></v-text-field>
                 </v-col>
@@ -81,7 +84,7 @@
                 <v-col cols="12">
                   <v-text-field
                     label="Price (ETH)"
-                    v-model="price"
+                    v-model="nftJSON.price"
                     required
                   ></v-text-field>
                 </v-col>
@@ -91,7 +94,7 @@
                     max="50"
                     thumb-color="red"
                     thumb-label="always"
-                    v-model.number="royalty"
+                    v-model.number="nftJSON.royalty"
                   >
                     <template v-slot:thumb-label="{ value }">
                       {{ value }} %
@@ -102,16 +105,16 @@
               <v-col>
                 <v-card class="mx-auto" max-width="344">
                   <v-img
-                    :src="objectURL"
+                    :src="nftJSON.objectURL"
                     max-width="300px"
                     aspect-ratio="2"
                   ></v-img>
 
                   <v-card-title>
-                    {{ name }}
+                    {{ nftJSON.name }}
                   </v-card-title>
 
-                  <v-card-subtitle> {{ price }} (ETH) </v-card-subtitle>
+                  <v-card-subtitle> {{ nftJSON.price }} (ETH) </v-card-subtitle>
                 </v-card>
               </v-col>
             </v-row>
@@ -134,20 +137,23 @@ export default {
   components: {},
   data() {
     return {
-      overlay : false,
-      singleNFT : false,
-      multipleNFT : false,
+      overlay: false,
+      singleNFT: false,
+      multipleNFT: false,
       single: null,
       singleBuffer: null,
       multiple: null,
-      objectURL: null,
       dialogCreateNFT: false,
       range: [0, 40],
-      name: "",
       quantity: 1,
-      price: "0",
-      royalty: 0,
       tab: null,
+      nftJSON: {
+        objectURL: null,
+        price: "0",
+        royalty: 0,
+        name: "",
+        nameAuthor: "",
+      },
       items: [
         {
           name: "Image",
@@ -173,8 +179,20 @@ export default {
     };
   },
   methods: {
-    getFile(e) {
+    async getFile(e) {
+      const IPFS = require("ipfs-core");
       const reader = new FileReader();
+      const ipfs = await IPFS.create();
+      const stream = ipfs.cat("QmPChd2hVbrJ6bfo3WBcTW4iZnpHm8TEzWkLHmLpXhF68A");
+      console.log(stream);
+      let data = "";
+      for await (const chunk of stream) {
+        // chunks of data are returned as a Buffer, convert it back to a string
+        data += chunk.toString();
+      }
+
+      console.log(data);
+      ipfs.stop();
       this.objectURL = URL.createObjectURL(e);
       reader.readAsArrayBuffer(e);
       reader.onload = (e) => {
@@ -185,24 +203,35 @@ export default {
       const IPFS = require("ipfs-core");
       const Web3 = require("web3");
       const abi = require("../static/ABI");
-      //var ipfs = await IPFS.create();
+
       try {
-        this.overlay = true
+        //IPFS
+        const ipfs = await IPFS.create();
+        //const { cid } = await ipfs.add("Hello world");
+
+        //console.info(cid);
+        let doc = JSON.stringify(this.nftJSON);
+
+        let { cid } = await ipfs.add(doc);
+
+        console.log("IPFS cid:", cid);
+        let result = ipfs.cat(cid);
+        console.log(result);
+        ipfs.stop();
+        this.overlay = true;
         await window.ethereum.request({ method: "eth_requestAccounts" });
         var web3 = new Web3(Web3.givenProvider);
         let userAccount = web3.currentProvider.selectedAddress;
         var contractAddress = "0xd705aCe869e4530c9Add3ff4317CBd2F918bC0F8";
         var contract = new web3.eth.Contract(abi.default, contractAddress);
-        //const results = await ipfs.add(this.singleBuffer);
         let res = await contract.methods
-          .multiple(userAccount, this.objectURL, this.quantity, this.royalty )
+          .multiple(userAccount, this.objectURL, this.quantity, this.royalty)
           .send({ from: userAccount });
-        this.overlay = false
-        alert("NFT creado , you trasnsaction hash is: "+ res.transactionHash );
+        this.overlay = false;
+        alert("NFT creado , you trasnsaction hash is: " + res.transactionHash);
       } catch (error) {
-        this.overlay = false
+        this.overlay = false;
         alert(error);
-        
       }
     },
   },
