@@ -1,13 +1,24 @@
 <template>
   <v-container>
-    <!--
-    <v-file-input
-      multiple
-      label="File multiple input"
-      v-model="multiple"
-    ></v-file-input>
-    -->
     <v-btn right @click="dialogCreateNFT = true">Create NFT</v-btn>
+    <v-btn right @click="showNFTs">Show NFTs</v-btn>
+    <v-col v-for="(item , index ) in listNFTs" :key="index">
+      <v-card class="mx-auto" max-width="344">
+        <v-img :src="item.image" max-width="300px" aspect-ratio="2"></v-img>
+
+        <v-card-title>
+          {{ item.name }}
+        </v-card-title>
+
+        <v-card-subtitle> {{ item.price }} (ETH) </v-card-subtitle>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text  :href="item.image" target="_blank">
+            Ver en IPFS
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-col>
     <v-dialog v-model="dialogCreateNFT" persistent max-width="900px">
       <v-overlay :value="overlay">
         <v-progress-circular indeterminate size="64"></v-progress-circular>
@@ -20,7 +31,7 @@
           <v-container>
             <v-row>
               <v-col cols="8">
-                <v-btn @click="singleNFT = true">Single</v-btn>
+                <v-btn @click="multipleNFT = false">Single</v-btn>
                 <v-btn @click="multipleNFT = true">Multiple</v-btn>
                 <v-col v-if="multipleNFT" cols="12">
                   <v-text-field
@@ -105,7 +116,7 @@
               <v-col>
                 <v-card class="mx-auto" max-width="344">
                   <v-img
-                    :src="nftJSON.objectURL"
+                    :src="objectURL"
                     max-width="300px"
                     aspect-ratio="2"
                   ></v-img>
@@ -133,6 +144,11 @@
 </template>
 
 <script>
+const Web3 = require("web3");
+const abi = require("../static/ABI");
+const contractAddress = "0x872204375A0CaFc3DC0efBD16a5CcC8f19B51c9a";
+var web3 = new Web3(Web3.givenProvider);
+const contract = new web3.eth.Contract(abi.default, contractAddress);
 export default {
   components: {},
   data() {
@@ -147,8 +163,10 @@ export default {
       range: [0, 40],
       quantity: 1,
       tab: null,
+      objectURL: null,
+      listNFTs: [],
       nftJSON: {
-        objectURL: null,
+        image: "",
         price: "0",
         royalty: 0,
         name: "",
@@ -180,58 +198,60 @@ export default {
   },
   methods: {
     async getFile(e) {
-      const IPFS = require("ipfs-core");
       const reader = new FileReader();
-      const ipfs = await IPFS.create();
-      const stream = ipfs.cat("QmPChd2hVbrJ6bfo3WBcTW4iZnpHm8TEzWkLHmLpXhF68A");
-      console.log(stream);
-      let data = "";
-      for await (const chunk of stream) {
-        // chunks of data are returned as a Buffer, convert it back to a string
-        data += chunk.toString();
-      }
-
-      console.log(data);
-      ipfs.stop();
       this.objectURL = URL.createObjectURL(e);
-      reader.readAsArrayBuffer(e);
-      reader.onload = (e) => {
-        this.singleBuffer = e.target.result;
-      };
     },
     async createNFT() {
-      const IPFS = require("ipfs-core");
-      const Web3 = require("web3");
-      const abi = require("../static/ABI");
+      this.overlay = true;
+      var ctx = this;
+      const FormData = require("form-data");
 
+      let data = new FormData();
+      data.append("file", this.single);
+
+      const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+      var userAccount = web3.currentProvider.selectedAddress;
       try {
-        //IPFS
-        const ipfs = await IPFS.create();
-        //const { cid } = await ipfs.add("Hello world");
-
-        //console.info(cid);
+        await this.$axios
+          .$post(url, data, {
+            headers: {
+              "Content-Type": `multipart/form-data; boundary= ${data._boundary}`,
+              pinata_api_key: "7b0392130ef9442078a4",
+              pinata_secret_api_key:
+                "c5c08101c07d0bba2acd52c49ce5448512b081b5414e67456a7f766776668df4",
+            },
+          })
+          .then(function (response) {
+            console.log(response);
+            ctx.nftJSON.image = `ipfs://${response.IpfsHash}`;
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
         let doc = JSON.stringify(this.nftJSON);
-
-        let { cid } = await ipfs.add(doc);
-
-        console.log("IPFS cid:", cid);
-        let result = ipfs.cat(cid);
-        console.log(result);
-        ipfs.stop();
-        this.overlay = true;
         await window.ethereum.request({ method: "eth_requestAccounts" });
-        var web3 = new Web3(Web3.givenProvider);
-        let userAccount = web3.currentProvider.selectedAddress;
-        var contractAddress = "0xd705aCe869e4530c9Add3ff4317CBd2F918bC0F8";
-        var contract = new web3.eth.Contract(abi.default, contractAddress);
+        console.log(doc);
         let res = await contract.methods
-          .multiple(userAccount, this.objectURL, this.quantity, this.royalty)
+          .multiple(userAccount, doc, this.quantity, this.nftJSON.royalty)
           .send({ from: userAccount });
+        console.log(res);
         this.overlay = false;
         alert("NFT creado , you trasnsaction hash is: " + res.transactionHash);
       } catch (error) {
         this.overlay = false;
         alert(error);
+        console.log(error);
+      }
+    },
+    async showNFTs() {
+      var userAccount = web3.currentProvider.selectedAddress;
+      let res = await contract.methods.contracts().call({ from: userAccount });
+      for (let i = 1; i <= res; i++) {
+        let res = await contract.methods
+          .tokenURI(i)
+          .call({ from: userAccount });
+        
+        this.listNFTs.push(JSON.parse(res));
       }
     },
   },

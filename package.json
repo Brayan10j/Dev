@@ -13,6 +13,7 @@
     "@nuxtjs/axios": "^5.13.1",
     "@nuxtjs/pwa": "^3.3.5",
     "core-js": "^3.9.1",
+    "form-data": "^3.0.1",
     "geojson2h3": "^1.1.1",
     "h3-js": "^3.7.2",
     "ipfs-core": "^0.7.1",
