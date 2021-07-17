@@ -4,7 +4,7 @@
     <v-btn right @click="showNFTs">Show NFTs</v-btn>
     <v-col v-for="(item , index ) in listNFTs" :key="index">
       <v-card class="mx-auto" max-width="344">
-        <v-img :src="item.image" max-width="300px" aspect-ratio="2"></v-img>
+        <v-img :src="item.image"></v-img>
 
         <v-card-title>
           {{ item.name }}
@@ -223,7 +223,7 @@ export default {
           })
           .then(function (response) {
             console.log(response);
-            ctx.nftJSON.image = `ipfs://${response.IpfsHash}`;
+            ctx.nftJSON.image = `https://gateway.pinata.cloud/ipfs/${response.IpfsHash}`; // https://gateway.pinata.cloud/ipfs/
           })
           .catch(function (error) {
             console.log(error);
@@ -236,6 +236,7 @@ export default {
           .send({ from: userAccount });
         console.log(res);
         this.overlay = false;
+        this.dialogCreateNFT = false
         alert("NFT creado , you trasnsaction hash is: " + res.transactionHash);
       } catch (error) {
         this.overlay = false;
@@ -244,6 +245,7 @@ export default {
       }
     },
     async showNFTs() {
+      this.listNFTs = []
       var userAccount = web3.currentProvider.selectedAddress;
       let res = await contract.methods.contracts().call({ from: userAccount });
       for (let i = 1; i <= res; i++) {
