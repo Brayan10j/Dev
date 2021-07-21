@@ -2,26 +2,59 @@
   <v-container>
     <v-btn right @click="dialogCreateNFT = true">Create NFT</v-btn>
     <v-btn right @click="showNFTs">Show NFTs</v-btn>
-    <v-col v-for="(item , index ) in listNFTs" :key="index">
-      <v-card class="mx-auto" max-width="344">
-        <v-img :src="item.image"></v-img>
-
-        <v-card-title>
-          {{ item.name }}
-        </v-card-title>
-
-        <v-card-subtitle> {{ item.price }} (ETH) </v-card-subtitle>
-        <v-card-actions>
-          <v-spacer></v-spacer>
-          <v-btn color="blue darken-1" text  :href="item.image" target="_blank">
-            Ver en IPFS
-          </v-btn>
-        </v-card-actions>
+    <br>
+    <h1> NFTs Tokenized</h1>
+    <br>
+    <v-row>
+      <v-col v-for="(item, index) in listNFTs" :key="index">
+        <v-card class="mx-auto" width="400" @click.stop="showNFT(item)">
+          <v-img :src="item.image"></v-img>
+          <v-card-title>{{ item.name }}</v-card-title>
+          <v-card-subtitle>
+            {{ item.nameAuthor }}
+          </v-card-subtitle>
+          <v-card-actions>
+            <v-btn
+              color="blue darken-1"
+              text
+              :href="item.image"
+              target="_blank"
+            >
+              Ver en IPFS
+            </v-btn>
+            <v-spacer></v-spacer>
+            <v-card-title>{{ item.price }} (ETH)</v-card-title>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+    <v-dialog v-model="dialogNFT" max-width="800px">
+      <v-card width="800px" class="mt-4">
+        <v-card-text>
+          <v-row>
+            <v-col cols="4">
+              <v-card-title> Name </v-card-title>
+              <v-card-subtitle> {{ NFT.name }} </v-card-subtitle>
+              <v-card-title> Author </v-card-title>
+              <v-card-subtitle> {{ NFT.nameAuthor }} </v-card-subtitle>
+              <v-card-title> Description </v-card-title>
+              <v-card-subtitle>{{ NFT.description }} </v-card-subtitle>
+              <v-card-actions>
+                <v-btn color="blue darken-1" bottom> Buy Now </v-btn>
+              </v-card-actions>
+            </v-col>
+            <v-col cols="8">
+              <v-card class="mx-auto">
+                <v-img :src="NFT.image" width="500px"></v-img>
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-card-text>
       </v-card>
-    </v-col>
+    </v-dialog>
     <v-dialog v-model="dialogCreateNFT" persistent max-width="900px">
       <v-overlay :value="overlay">
-        <v-progress-circular indeterminate size="64"></v-progress-circular>
+        <v-progress-circular indeterminate size="150"></v-progress-circular>
       </v-overlay>
       <v-card>
         <v-card-title>
@@ -81,18 +114,6 @@
                   <v-textarea label="Description"></v-textarea>
                 </v-col>
                 <v-col cols="12">
-                  <v-select
-                    :items="[
-                      '1 category',
-                      '2 category',
-                      '3 category',
-                      '4 category',
-                    ]"
-                    label="Category"
-                    required
-                  ></v-select>
-                </v-col>
-                <v-col cols="12">
                   <v-text-field
                     label="Price (ETH)"
                     v-model="nftJSON.price"
@@ -149,16 +170,20 @@ const abi = require("../static/ABI");
 const contractAddress = "0x872204375A0CaFc3DC0efBD16a5CcC8f19B51c9a";
 var web3 = new Web3(Web3.givenProvider);
 const contract = new web3.eth.Contract(abi.default, contractAddress);
+console.log(web3.currentProvider);
 export default {
   components: {},
   data() {
     return {
+      show: false,
       overlay: false,
       singleNFT: false,
       multipleNFT: false,
       single: null,
       singleBuffer: null,
       multiple: null,
+      NFT: {},
+      dialogNFT: false,
       dialogCreateNFT: false,
       range: [0, 40],
       quantity: 1,
@@ -171,6 +196,7 @@ export default {
         royalty: 0,
         name: "",
         nameAuthor: "",
+        description: "",
       },
       items: [
         {
@@ -197,6 +223,10 @@ export default {
     };
   },
   methods: {
+    showNFT(item) {
+      this.dialogNFT = true;
+      this.NFT = item;
+    },
     async getFile(e) {
       const reader = new FileReader();
       this.objectURL = URL.createObjectURL(e);
@@ -230,13 +260,12 @@ export default {
           });
         let doc = JSON.stringify(this.nftJSON);
         await window.ethereum.request({ method: "eth_requestAccounts" });
-        console.log(doc);
         let res = await contract.methods
           .multiple(userAccount, doc, this.quantity, this.nftJSON.royalty)
           .send({ from: userAccount });
         console.log(res);
         this.overlay = false;
-        this.dialogCreateNFT = false
+        this.dialogCreateNFT = false;
         alert("NFT creado , you trasnsaction hash is: " + res.transactionHash);
       } catch (error) {
         this.overlay = false;
@@ -245,17 +274,20 @@ export default {
       }
     },
     async showNFTs() {
-      this.listNFTs = []
+      this.listNFTs = [];
       var userAccount = web3.currentProvider.selectedAddress;
       let res = await contract.methods.contracts().call({ from: userAccount });
       for (let i = 1; i <= res; i++) {
         let res = await contract.methods
           .tokenURI(i)
           .call({ from: userAccount });
-        
+
         this.listNFTs.push(JSON.parse(res));
       }
     },
+  },
+  mounted() {
+    this.showNFTs();
   },
 };
 </script>
