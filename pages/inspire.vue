@@ -1,13 +1,12 @@
 <template>
   <v-container>
     <v-btn right @click="dialogCreateNFT = true">Create NFT</v-btn>
-    <v-btn right @click="showNFTs">Show NFTs</v-btn>
     <br>
     <h1> NFTs Tokenized</h1>
     <br>
     <v-row>
       <v-col v-for="(item, index) in listNFTs" :key="index">
-        <v-card class="mx-auto" width="400" @click.stop="showNFT(item)">
+        <v-card class="mx-auto" width="400" height="600" @click.stop="showNFT(item)">
           <v-img :src="item.image"></v-img>
           <v-card-title>{{ item.name }}</v-card-title>
           <v-card-subtitle>
@@ -170,7 +169,6 @@ const abi = require("../static/ABI");
 const contractAddress = "0x872204375A0CaFc3DC0efBD16a5CcC8f19B51c9a";
 var web3 = new Web3(Web3.givenProvider);
 const contract = new web3.eth.Contract(abi.default, contractAddress);
-console.log(web3.currentProvider);
 export default {
   components: {},
   data() {
@@ -281,8 +279,10 @@ export default {
         let res = await contract.methods
           .tokenURI(i)
           .call({ from: userAccount });
-
-        this.listNFTs.push(JSON.parse(res));
+        try {
+          this.listNFTs.push(JSON.parse(res));
+        } catch (error) {
+        }
       }
     },
   },
