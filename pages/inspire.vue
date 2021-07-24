@@ -1,12 +1,49 @@
 <template>
   <v-container>
-    <v-btn right @click="dialogCreateNFT = true">Create NFT</v-btn>
-    <br>
-    <h1> NFTs Tokenized</h1>
-    <br>
+    <v-btn
+            fab
+            dark
+            fixed
+            bottom
+            right
+            color="blue"
+            @click="dialogCreateNFT = true"
+              >
+                <v-icon>mdi-plus</v-icon>
+              </v-btn>
+    <v-container>
+      <v-row>
+        <v-col cols="6">
+          <v-img src="./nft.png"></v-img>
+        </v-col>
+        <v-col cols="6">
+          <h1 class="font-italic" style="text-align: center">
+            NFT Showroom is a digital art marketplace built on Hive, a fast and
+            free blockchain that makes creating and collecting rare digital art
+            simple and accessible!
+          </h1>
+          <br>
+          <v-carousel :show-arrows="false">
+            <v-carousel-item
+              v-for="(item, i) in listNFTs.slice((listNFTs.length - 3),listNFTs.length)"
+              :key="i"
+              :src="item.image"
+            ></v-carousel-item>
+          </v-carousel>
+        </v-col>
+      </v-row>
+    </v-container>
+    <br />
+    <h1>NFTs Tokenized</h1>
+    <br />
     <v-row>
       <v-col v-for="(item, index) in listNFTs" :key="index">
-        <v-card class="mx-auto" width="400" height="600" @click.stop="showNFT(item)">
+        <v-card
+          class="mx-auto"
+          width="400"
+          height="600"
+          @click.stop="showNFT(item)"
+        >
           <v-img :src="item.image"></v-img>
           <v-card-title>{{ item.name }}</v-card-title>
           <v-card-subtitle>
@@ -281,8 +318,7 @@ export default {
           .call({ from: userAccount });
         try {
           this.listNFTs.push(JSON.parse(res));
-        } catch (error) {
-        }
+        } catch (error) {}
       }
     },
   },
