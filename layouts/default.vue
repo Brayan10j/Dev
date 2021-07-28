@@ -39,8 +39,8 @@
       <v-spacer />
       <v-menu bottom left>
         <template v-slot:activator="{ on, attrs }">
-          <div v-if="loged" color="blue">
-            <v-btn color="blue" @click.stop="loginMetaMask">
+          <div v-if="!loged" color="blue">
+            <v-btn color="blue" @click="loginMetaMask">
               <v-icon>mdi-wallet</v-icon>
               Connect
             </v-btn>
@@ -55,8 +55,8 @@
         </template>
 
         <v-list>
-          <v-list-item v-for="(item, i) in itemsMenu" :key="i">
-            <v-list-item-title>{{ item.title }}</v-list-item-title>
+          <v-list-item >
+            <v-list-item-title  >LogOut</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -98,11 +98,6 @@ export default {
       rightDrawer: false,
       title: "SERVER",
       loged: false,
-      itemsMenu: [
-        { title: "Profile" },
-        { title: "My NFTs" },
-        { title: "LogvOut" },
-      ],
     };
   },
   methods: {
@@ -111,28 +106,42 @@ export default {
         await window.ethereum.request({ method: "eth_requestAccounts" });
         let dir = window.ethereum.selectedAddress;
         this.clientAdress = dir.slice(0, 5) + ".." + dir.slice(-3);
-        console.log(this.clientAdress);
-        this.loged = false;
-      } catch (error) {
-        alert(error.message);
         this.loged = true;
+      } catch (error) {
+        console.log(error);
+        this.loged = false;
       }
+    },
+    logOut() {
+      // quitar de metamask
+      this.loged = false;
     },
     loginBinance() {
       window.BinanceChain.request({ method: "eth_accounts" });
     },
   },
   mounted() {
+    let ctx = this;
     if (typeof window.ethereum !== "undefined") {
       console.log("MetaMask is installed!");
-      if (window.ethereum.selectedAddress == undefined) this.loginMetaMask();
-      else {
+      if (window.ethereum.selectedAddress == undefined) {
+        this.loginMetaMask();
+      } else {
         let dir = window.ethereum.selectedAddress;
         this.clientAdress = dir.slice(0, 5) + ".." + dir.slice(-3);
       }
     } else {
       alert("MetaMask not installed  :(");
     }
+    window.ethereum.on("accountsChanged", function (accounts) {
+      if (window.ethereum.selectedAddress == undefined) {
+        ctx.loged = false;
+      } else {
+        let dir = accounts[0];
+        ctx.clientAdress = dir.slice(0, 5) + ".." + dir.slice(-3);
+        ctx.loged = true;
+      }
+    });
   },
 };
 </script>

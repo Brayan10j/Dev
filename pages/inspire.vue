@@ -1,8 +1,5 @@
 <template>
   <v-container>
-    <v-overlay :value="overlay">
-      <v-progress-circular indeterminate size="150"></v-progress-circular>
-    </v-overlay>
     <v-btn
       fab
       dark
@@ -57,7 +54,9 @@
           </v-card-subtitle>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-card-title>{{ item.price }} (ETH)</v-card-title>
+            <v-card-title v-if="item.allowSell"
+              >{{ item.price }} (ETH)</v-card-title
+            >
           </v-card-actions>
         </v-card>
       </v-col>
@@ -77,7 +76,8 @@
                 <v-btn
                   color="blue darken-1"
                   bottom
-                  v-if="!isOwner(NFT.id) && NFT.allowSell"
+                  v-if="!isOwnerNFT && NFT.allowSell"
+                  @click="buyNFT(NFT)"
                 >
                   Buy Now
                 </v-btn>
@@ -100,20 +100,24 @@
             </v-col>
             <v-speed-dial
               v-model="fab"
-              v-if="isOwner(NFT.id)"
               bottom
               left
               direction="top"
-              open-on-hover
               transition="slide-y-reverse-transition"
             >
               <template v-slot:activator>
-                <v-btn v-model="fab" color="blue darken-2" dark fab>
+                <v-btn
+                  v-model="fab"
+                  v-if="isOwnerNFT"
+                  color="blue darken-2"
+                  dark
+                  fab
+                >
                   <v-icon v-if="fab"> mdi-close </v-icon>
                   <v-icon v-else> mdi-application-settings </v-icon>
                 </v-btn>
               </template>
-              <v-btn fab dark small color="indigo">
+              <v-btn fab dark small color="indigo" @click="dialogNewPrice = true">
                 <v-icon>mdi-sack-percent</v-icon>
               </v-btn>
               <v-btn fab dark small color="red" @click="dialogDelete = true">
@@ -124,6 +128,9 @@
         </v-card-text>
       </v-card>
       <v-dialog v-model="dialogDelete" max-width="500px" persistent>
+        <v-overlay :value="overlay">
+          <v-progress-circular indeterminate size="150"></v-progress-circular>
+        </v-overlay>
         <v-card>
           <v-card-title class="headline"
             >Are you sure you want to delete?</v-card-title
@@ -140,8 +147,35 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+      <v-dialog v-model="dialogNewPrice" max-width="500px" persistent>
+        <v-overlay :value="overlay">
+          <v-progress-circular indeterminate size="150"></v-progress-circular>
+        </v-overlay>
+        <v-card>
+          <v-card-title class="headline"
+            >What is new price?</v-card-title
+          >
+
+          <v-card-actions>
+            <v-text-field
+              label="Price (ETH)"
+              v-model="NFT.price"
+              required
+            ></v-text-field>
+            <v-spacer></v-spacer>
+            <v-btn color="blue darken-1" text @click="dialogNewPrice = false"
+              >Cancel</v-btn
+            >
+            <v-btn color="blue darken-1" text @click="sellNFT(NFT)">OK</v-btn>
+            <v-spacer></v-spacer>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-dialog>
     <v-dialog v-model="dialogCreateNFT" persistent max-width="900px">
+      <v-overlay :value="overlay">
+        <v-progress-circular indeterminate size="150"></v-progress-circular>
+      </v-overlay>
       <v-card>
         <v-card-title>
           <span class="text-h5">Create NFT</span>
@@ -259,13 +293,15 @@
 <script>
 const Web3 = require("web3");
 const abi = require("../static/ABI");
-const contractAddress = "0x3F30447fE0B68Dc6B5927555Aa5ad9eE8Bd7a617";
+const contractAddress = "0xAd2202B9E4b4CFb4d3505945B00be9c3Ea1dc260";
 var web3 = new Web3(Web3.givenProvider);
 const contract = new web3.eth.Contract(abi.default, contractAddress);
 export default {
   components: {},
   data() {
     return {
+      dialogNewPrice: false,
+      isOwnerNFT: false,
       dialogDelete: false,
       userAccount: "",
       fab: false,
@@ -321,6 +357,7 @@ export default {
     showNFT(item) {
       this.dialogNFT = true;
       this.NFT = item;
+      this.isOwner(this.NFT.id);
     },
     async getFile(e) {
       const reader = new FileReader();
@@ -387,31 +424,70 @@ export default {
       });
     },
     async burnNFT(id) {
+      if (id != undefined) {
+        this.overlay = true;
+        try {
+          await contract.methods.burn(id).send({ from: this.userAccount });
+          alert("Burn Token");
+          this.overlay = false;
+          this.dialogDelete = false;
+          this.dialogNFT = false;
+          this.showNFTs();
+        } catch (error) {
+          alert(error);
+          this.overlay = false;
+        }
+      }
+    },
+    async buyNFT(NFT) {
       this.overlay = true;
       try {
-        await contract.methods.burn(id).send({ from: this.userAccount });
-        alert("Burn Token");
-        this.dialogDelete = false;
+        var value = web3.utils.toWei(NFT.price, "ether");
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        this.userAccount = web3.currentProvider.selectedAddress;
+        await contract.methods
+          .buyNFT(NFT.id)
+          .send({ from: this.userAccount, value: value });
         this.overlay = false;
+        this.dialogNFT = false;
         this.showNFTs();
       } catch (error) {
-        alert("NO se pudo quemar");
+        alert(error.message);
+        this.dialogNFT = false;
+        this.overlay = false;
+      }
+    },
+    async sellNFT(NFT) {
+      this.overlay = true;
+      try {
+        let doc = JSON.stringify(NFT);
+        await contract.methods
+          .updateURI(NFT.id, doc)
+          .send({ from: this.userAccount });
+        this.overlay = false;
+        this.dialogNewPrice = false;
+      } catch (error) {
+        alert(error);
+        this.dialogNewPrice = false;
         this.overlay = false;
       }
     },
     async isOwner(id) {
-      try {
+      if (id != undefined) {
         let res = await contract.methods
-        .ownerOf(id)
-        .call({ from: this.userAccount });
-        return res == this.userAccount ? true : false;
-      } catch (error) {
-        return false;
+          .ownerOf(id)
+          .call({ from: this.userAccount });
+        this.isOwnerNFT = res.toLowerCase() == this.userAccount;
       }
     },
   },
   mounted() {
+    let ctx = this;
     this.showNFTs();
+    window.ethereum.on("accountsChanged", function (accounts) {
+        ctx.userAccount = accounts[0];
+        ctx.showNFTs();
+    });
   },
 };
 </script>
