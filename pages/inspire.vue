@@ -1,16 +1,19 @@
 <template>
   <v-container>
+    <v-overlay :value="overlay">
+      <v-progress-circular indeterminate size="150"></v-progress-circular>
+    </v-overlay>
     <v-btn
-            fab
-            dark
-            fixed
-            bottom
-            right
-            color="blue"
-            @click="dialogCreateNFT = true"
-              >
-                <v-icon>mdi-plus</v-icon>
-              </v-btn>
+      fab
+      dark
+      fixed
+      bottom
+      right
+      color="blue"
+      @click="dialogCreateNFT = true"
+    >
+      <v-icon>mdi-plus</v-icon>
+    </v-btn>
     <v-container>
       <v-row>
         <v-col cols="6">
@@ -18,14 +21,17 @@
         </v-col>
         <v-col cols="6">
           <h1 class="font-italic" style="text-align: center">
-            NFT Showroom is a digital art marketplace built on Hive, a fast and
+            This page is a digital art marketplace built on Hive, a fast and
             free blockchain that makes creating and collecting rare digital art
             simple and accessible!
           </h1>
-          <br>
+          <br />
           <v-carousel :show-arrows="false">
             <v-carousel-item
-              v-for="(item, i) in listNFTs.slice((listNFTs.length - 3),listNFTs.length)"
+              v-for="(item, i) in listNFTs.slice(
+                listNFTs.length - 3,
+                listNFTs.length
+              )"
               :key="i"
               :src="item.image"
             ></v-carousel-item>
@@ -44,20 +50,12 @@
           height="600"
           @click.stop="showNFT(item)"
         >
-          <v-img :src="item.image"></v-img>
+          <v-img :src="item.image" height="400"></v-img>
           <v-card-title>{{ item.name }}</v-card-title>
           <v-card-subtitle>
             {{ item.nameAuthor }}
           </v-card-subtitle>
           <v-card-actions>
-            <v-btn
-              color="blue darken-1"
-              text
-              :href="item.image"
-              target="_blank"
-            >
-              Ver en IPFS
-            </v-btn>
             <v-spacer></v-spacer>
             <v-card-title>{{ item.price }} (ETH)</v-card-title>
           </v-card-actions>
@@ -76,22 +74,74 @@
               <v-card-title> Description </v-card-title>
               <v-card-subtitle>{{ NFT.description }} </v-card-subtitle>
               <v-card-actions>
-                <v-btn color="blue darken-1" bottom> Buy Now </v-btn>
+                <v-btn
+                  color="blue darken-1"
+                  bottom
+                  v-if="!isOwner(NFT.id) && NFT.allowSell"
+                >
+                  Buy Now
+                </v-btn>
               </v-card-actions>
             </v-col>
             <v-col cols="8">
               <v-card class="mx-auto">
                 <v-img :src="NFT.image" width="500px"></v-img>
+                <v-card-actions class="justify-center">
+                  <v-btn
+                    color="blue darken-1"
+                    text
+                    :href="NFT.image"
+                    target="_blank"
+                  >
+                    Ver en IPFS
+                  </v-btn>
+                </v-card-actions>
               </v-card>
             </v-col>
+            <v-speed-dial
+              v-model="fab"
+              v-if="isOwner(NFT.id)"
+              bottom
+              left
+              direction="top"
+              open-on-hover
+              transition="slide-y-reverse-transition"
+            >
+              <template v-slot:activator>
+                <v-btn v-model="fab" color="blue darken-2" dark fab>
+                  <v-icon v-if="fab"> mdi-close </v-icon>
+                  <v-icon v-else> mdi-application-settings </v-icon>
+                </v-btn>
+              </template>
+              <v-btn fab dark small color="indigo">
+                <v-icon>mdi-sack-percent</v-icon>
+              </v-btn>
+              <v-btn fab dark small color="red" @click="dialogDelete = true">
+                <v-icon>mdi-delete</v-icon>
+              </v-btn>
+            </v-speed-dial>
           </v-row>
         </v-card-text>
       </v-card>
+      <v-dialog v-model="dialogDelete" max-width="500px" persistent>
+        <v-card>
+          <v-card-title class="headline"
+            >Are you sure you want to delete?</v-card-title
+          >
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn color="blue darken-1" text @click="dialogDelete = false"
+              >Cancel</v-btn
+            >
+            <v-btn color="blue darken-1" text @click="burnNFT(NFT.id)"
+              >OK</v-btn
+            >
+            <v-spacer></v-spacer>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </v-dialog>
     <v-dialog v-model="dialogCreateNFT" persistent max-width="900px">
-      <v-overlay :value="overlay">
-        <v-progress-circular indeterminate size="150"></v-progress-circular>
-      </v-overlay>
       <v-card>
         <v-card-title>
           <span class="text-h5">Create NFT</span>
@@ -117,13 +167,11 @@
                 <v-tabs-items v-model="tab">
                   <v-tab-item v-for="item in items" :key="item.name">
                     <v-file-input
-                      label="File input"
+                      :label="item.text"
                       :accept="item.accepts"
                       v-model="single"
                       @change="getFile"
                     ></v-file-input>
-                    {{ item.text }}
-
                     <br />
                     <v-file-input
                       v-if="item.name != 'Image'"
@@ -147,10 +195,18 @@
                   ></v-text-field>
                 </v-col>
                 <v-col cols="12">
-                  <v-textarea label="Description"></v-textarea>
+                  <v-textarea
+                    label="Description"
+                    v-model="nftJSON.description"
+                  ></v-textarea>
                 </v-col>
                 <v-col cols="12">
+                  <v-checkbox
+                    v-model="nftJSON.allowSell"
+                    label="Allow sell ?"
+                  ></v-checkbox>
                   <v-text-field
+                    v-if="nftJSON.allowSell"
                     label="Price (ETH)"
                     v-model="nftJSON.price"
                     required
@@ -203,13 +259,16 @@
 <script>
 const Web3 = require("web3");
 const abi = require("../static/ABI");
-const contractAddress = "0x872204375A0CaFc3DC0efBD16a5CcC8f19B51c9a";
+const contractAddress = "0x3F30447fE0B68Dc6B5927555Aa5ad9eE8Bd7a617";
 var web3 = new Web3(Web3.givenProvider);
 const contract = new web3.eth.Contract(abi.default, contractAddress);
 export default {
   components: {},
   data() {
     return {
+      dialogDelete: false,
+      userAccount: "",
+      fab: false,
       show: false,
       overlay: false,
       singleNFT: false,
@@ -232,6 +291,7 @@ export default {
         name: "",
         nameAuthor: "",
         description: "",
+        allowSell: false,
       },
       items: [
         {
@@ -288,7 +348,7 @@ export default {
           })
           .then(function (response) {
             console.log(response);
-            ctx.nftJSON.image = `https://gateway.pinata.cloud/ipfs/${response.IpfsHash}`; // https://gateway.pinata.cloud/ipfs/
+            ctx.nftJSON.image = `https://ipfs.io/ipfs/${response.IpfsHash}`; // https://gateway.pinata.cloud/ipfs/
           })
           .catch(function (error) {
             console.log(error);
@@ -302,6 +362,7 @@ export default {
         this.overlay = false;
         this.dialogCreateNFT = false;
         alert("NFT creado , you trasnsaction hash is: " + res.transactionHash);
+        this.showNFTs();
       } catch (error) {
         this.overlay = false;
         alert(error);
@@ -309,16 +370,43 @@ export default {
       }
     },
     async showNFTs() {
+      var ctx = this;
       this.listNFTs = [];
-      var userAccount = web3.currentProvider.selectedAddress;
-      let res = await contract.methods.contracts().call({ from: userAccount });
-      for (let i = 1; i <= res; i++) {
-        let res = await contract.methods
-          .tokenURI(i)
-          .call({ from: userAccount });
+      this.userAccount = web3.currentProvider.selectedAddress;
+      let res = await contract.methods
+        .getAllNFTs()
+        .call({ from: this.userAccount });
+      res.map((info) => {
         try {
-          this.listNFTs.push(JSON.parse(res));
-        } catch (error) {}
+          let newJSON = JSON.parse(info);
+          newJSON["id"] = res.indexOf(info) + 1; //id nft
+          ctx.listNFTs.push(newJSON);
+        } catch (error) {
+          //console.log(error)
+        }
+      });
+    },
+    async burnNFT(id) {
+      this.overlay = true;
+      try {
+        await contract.methods.burn(id).send({ from: this.userAccount });
+        alert("Burn Token");
+        this.dialogDelete = false;
+        this.overlay = false;
+        this.showNFTs();
+      } catch (error) {
+        alert("NO se pudo quemar");
+        this.overlay = false;
+      }
+    },
+    async isOwner(id) {
+      try {
+        let res = await contract.methods
+        .ownerOf(id)
+        .call({ from: this.userAccount });
+        return res == this.userAccount ? true : false;
+      } catch (error) {
+        return false;
       }
     },
   },
