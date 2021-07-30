@@ -117,7 +117,13 @@
                   <v-icon v-else> mdi-application-settings </v-icon>
                 </v-btn>
               </template>
-              <v-btn fab dark small color="indigo" @click="dialogNewPrice = true">
+              <v-btn
+                fab
+                dark
+                small
+                color="indigo"
+                @click="dialogNewPrice = true"
+              >
                 <v-icon>mdi-sack-percent</v-icon>
               </v-btn>
               <v-btn fab dark small color="red" @click="dialogDelete = true">
@@ -152,9 +158,7 @@
           <v-progress-circular indeterminate size="150"></v-progress-circular>
         </v-overlay>
         <v-card>
-          <v-card-title class="headline"
-            >What is new price?</v-card-title
-          >
+          <v-card-title class="headline">What is new price?</v-card-title>
 
           <v-card-actions>
             <v-text-field
@@ -185,14 +189,14 @@
             <v-row>
               <v-col cols="8">
                 <v-btn @click="multipleNFT = false">Single</v-btn>
-                <v-btn @click="multipleNFT = true">Multiple</v-btn>
+                <!--<v-btn @click="multipleNFT = true">Multiple</v-btn>
                 <v-col v-if="multipleNFT" cols="12">
                   <v-text-field
                     label="Quantity"
                     v-model.number="quantity"
                     required
                   ></v-text-field>
-                </v-col>
+                </v-col> -->
                 <v-tabs v-model="tab">
                   <v-tab v-for="item in items" :key="item.name">
                     {{ item.name }}
@@ -360,14 +364,13 @@ export default {
       this.isOwner(this.NFT.id);
     },
     async getFile(e) {
-      const reader = new FileReader();
       this.objectURL = URL.createObjectURL(e);
     },
     async createNFT() {
       this.overlay = true;
       var ctx = this;
       const FormData = require("form-data");
-
+      var IpfsHash 
       let data = new FormData();
       data.append("file", this.single);
 
@@ -384,7 +387,7 @@ export default {
             },
           })
           .then(function (response) {
-            console.log(response);
+            IpfsHash = response.IpfsHash
             ctx.nftJSON.image = `https://ipfs.io/ipfs/${response.IpfsHash}`; // https://gateway.pinata.cloud/ipfs/
           })
           .catch(function (error) {
@@ -401,9 +404,19 @@ export default {
         alert("NFT creado , you trasnsaction hash is: " + res.transactionHash);
         this.showNFTs();
       } catch (error) {
+        try {
+          const url2 = `https://api.pinata.cloud/pinning/unpin/${IpfsHash}`;
+          await axios
+            .delete(url2, {
+              headers: {
+                pinata_api_key: "7b0392130ef9442078a4",
+                pinata_secret_api_key:
+                  "c5c08101c07d0bba2acd52c49ce5448512b081b5414e67456a7f766776668df4",
+              },
+            })
+        } catch (error) {alert(error.message);}
         this.overlay = false;
-        alert(error);
-        console.log(error);
+        alert(error.message);
       }
     },
     async showNFTs() {
@@ -419,7 +432,7 @@ export default {
           newJSON["id"] = res.indexOf(info) + 1; //id nft
           ctx.listNFTs.push(newJSON);
         } catch (error) {
-          //console.log(error)
+          // console.log(error)
         }
       });
     },
@@ -448,6 +461,8 @@ export default {
         await contract.methods
           .buyNFT(NFT.id)
           .send({ from: this.userAccount, value: value });
+        NFT.allowSell = false;
+        await this.updateURi(NFT);
         this.overlay = false;
         this.dialogNFT = false;
         this.showNFTs();
@@ -457,13 +472,16 @@ export default {
         this.overlay = false;
       }
     },
+    async updateURi(NFT) {
+      let doc = JSON.stringify(NFT);
+      await contract.methods
+        .updateURI(NFT.id, doc)
+        .send({ from: this.userAccount });
+    },
     async sellNFT(NFT) {
       this.overlay = true;
       try {
-        let doc = JSON.stringify(NFT);
-        await contract.methods
-          .updateURI(NFT.id, doc)
-          .send({ from: this.userAccount });
+        await this.updateURi(NFT);
         this.overlay = false;
         this.dialogNewPrice = false;
       } catch (error) {
@@ -485,8 +503,8 @@ export default {
     let ctx = this;
     this.showNFTs();
     window.ethereum.on("accountsChanged", function (accounts) {
-        ctx.userAccount = accounts[0];
-        ctx.showNFTs();
+      ctx.userAccount = accounts[0];
+      ctx.showNFTs();
     });
   },
 };
