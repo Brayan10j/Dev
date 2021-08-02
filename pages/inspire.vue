@@ -76,7 +76,7 @@
                 <v-btn
                   color="blue darken-1"
                   bottom
-                  v-if="!isOwnerNFT && NFT.allowSell"
+                  v-show="!isOwnerNFT && NFT.allowSell"
                   @click="buyNFT(NFT)"
                 >
                   Buy Now
@@ -108,7 +108,7 @@
               <template v-slot:activator>
                 <v-btn
                   v-model="fab"
-                  v-if="isOwnerNFT"
+                  v-show="isOwnerNFT"
                   color="blue darken-2"
                   dark
                   fab
@@ -133,48 +133,46 @@
           </v-row>
         </v-card-text>
       </v-card>
-      <v-dialog v-model="dialogDelete" max-width="500px" persistent>
-        <v-overlay :value="overlay">
-          <v-progress-circular indeterminate size="150"></v-progress-circular>
-        </v-overlay>
-        <v-card>
-          <v-card-title class="headline"
-            >Are you sure you want to delete?</v-card-title
+    </v-dialog>
+    <v-dialog v-model="dialogDelete" max-width="500px" persistent>
+      <v-overlay :value="overlay">
+        <v-progress-circular indeterminate size="150"></v-progress-circular>
+      </v-overlay>
+      <v-card>
+        <v-card-title class="headline"
+          >Are you sure you want to delete?</v-card-title
+        >
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="dialogDelete = false"
+            >Cancel</v-btn
           >
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" text @click="dialogDelete = false"
-              >Cancel</v-btn
-            >
-            <v-btn color="blue darken-1" text @click="burnNFT(NFT.id)"
-              >OK</v-btn
-            >
-            <v-spacer></v-spacer>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-      <v-dialog v-model="dialogNewPrice" max-width="500px" persistent>
-        <v-overlay :value="overlay">
-          <v-progress-circular indeterminate size="150"></v-progress-circular>
-        </v-overlay>
-        <v-card>
-          <v-card-title class="headline">What is new price?</v-card-title>
+          <v-btn color="blue darken-1" text @click="burnNFT(NFT.id)">OK</v-btn>
+          <v-spacer></v-spacer>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    <v-dialog v-model="dialogNewPrice" max-width="500px" persistent>
+      <v-overlay :value="overlay">
+        <v-progress-circular indeterminate size="150"></v-progress-circular>
+      </v-overlay>
+      <v-card>
+        <v-card-title class="headline">What is new price?</v-card-title>
 
-          <v-card-actions>
-            <v-text-field
-              label="Price (ETH)"
-              v-model="NFT.price"
-              required
-            ></v-text-field>
-            <v-spacer></v-spacer>
-            <v-btn color="blue darken-1" text @click="dialogNewPrice = false"
-              >Cancel</v-btn
-            >
-            <v-btn color="blue darken-1" text @click="sellNFT(NFT)">OK</v-btn>
-            <v-spacer></v-spacer>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+        <v-card-actions>
+          <v-text-field
+            label="Price (ETH)"
+            v-model="NFT.price"
+            required
+          ></v-text-field>
+          <v-spacer></v-spacer>
+          <v-btn color="blue darken-1" text @click="dialogNewPrice = false"
+            >Cancel</v-btn
+          >
+          <v-btn color="blue darken-1" text @click="sellNFT(NFT)">OK</v-btn>
+          <v-spacer></v-spacer>
+        </v-card-actions>
+      </v-card>
     </v-dialog>
     <v-dialog v-model="dialogCreateNFT" persistent max-width="900px">
       <v-overlay :value="overlay">
@@ -358,10 +356,10 @@ export default {
     };
   },
   methods: {
-    showNFT(item) {
-      this.dialogNFT = true;
+    async showNFT(item) {     
       this.NFT = item;
-      this.isOwner(this.NFT.id);
+      await this.isOwner(this.NFT.id);
+      this.dialogNFT = true;
     },
     async getFile(e) {
       this.objectURL = URL.createObjectURL(e);
@@ -370,7 +368,7 @@ export default {
       this.overlay = true;
       var ctx = this;
       const FormData = require("form-data");
-      var IpfsHash 
+      var IpfsHash;
       let data = new FormData();
       data.append("file", this.single);
 
@@ -387,7 +385,7 @@ export default {
             },
           })
           .then(function (response) {
-            IpfsHash = response.IpfsHash
+            IpfsHash = response.IpfsHash;
             ctx.nftJSON.image = `https://ipfs.io/ipfs/${response.IpfsHash}`; // https://gateway.pinata.cloud/ipfs/
           })
           .catch(function (error) {
@@ -406,15 +404,16 @@ export default {
       } catch (error) {
         try {
           const url2 = `https://api.pinata.cloud/pinning/unpin/${IpfsHash}`;
-          await axios
-            .delete(url2, {
-              headers: {
-                pinata_api_key: "7b0392130ef9442078a4",
-                pinata_secret_api_key:
-                  "c5c08101c07d0bba2acd52c49ce5448512b081b5414e67456a7f766776668df4",
-              },
-            })
-        } catch (error) {alert(error.message);}
+          await axios.delete(url2, {
+            headers: {
+              pinata_api_key: "7b0392130ef9442078a4",
+              pinata_secret_api_key:
+                "c5c08101c07d0bba2acd52c49ce5448512b081b5414e67456a7f766776668df4",
+            },
+          });
+        } catch (error) {
+          alert(error.message);
+        }
         this.overlay = false;
         alert(error.message);
       }
@@ -463,13 +462,14 @@ export default {
           .send({ from: this.userAccount, value: value });
         NFT.allowSell = false;
         await this.updateURi(NFT);
+        await this.showNFTs();
         this.overlay = false;
-        this.dialogNFT = false;
-        this.showNFTs();
+        this.dialogNFT = false;       
       } catch (error) {
         alert(error.message);
-        this.dialogNFT = false;
         this.overlay = false;
+        this.dialogNFT = false;
+        
       }
     },
     async updateURi(NFT) {
@@ -481,7 +481,9 @@ export default {
     async sellNFT(NFT) {
       this.overlay = true;
       try {
+        NFT.allowSell = true;
         await this.updateURi(NFT);
+        await this.showNFTs();
         this.overlay = false;
         this.dialogNewPrice = false;
       } catch (error) {
