@@ -92,6 +92,11 @@ export default {
           title: "Marketplace NFTs",
           to: "/inspire",
         },
+        {
+          icon: "mdi-file",
+          title: "File hash",
+          to: "/fileHash",
+        },
       ],
       miniVariant: false,
       right: true,
