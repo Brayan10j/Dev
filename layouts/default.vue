@@ -39,14 +39,14 @@
       <v-spacer />
       <v-menu bottom left>
         <template v-slot:activator="{ on, attrs }">
-          <div v-if="!loged" color="blue">
+          <div v-show="!loged" color="blue">
             <v-btn color="blue" @click="loginMetaMask">
               <v-icon>mdi-wallet</v-icon>
               Connect
             </v-btn>
           </div>
 
-          <div v-else v-bind="attrs" v-on="on">
+          <div  v-show="loged" v-bind="attrs" v-on="on">
             {{ clientAdress }}
             <v-avatar>
               <v-icon> mdi-account-circle </v-icon>
@@ -55,8 +55,8 @@
         </template>
 
         <v-list>
-          <v-list-item >
-            <v-list-item-title  >LogOut</v-list-item-title>
+          <v-list-item>
+            <v-list-item-title>LogOut</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-menu>
@@ -108,6 +108,8 @@ export default {
   methods: {
     async loginMetaMask() {
       try {
+        if (typeof window.ethereum === "undefined")
+          alert("MetaMask not installed  :(");
         await window.ethereum.request({ method: "eth_requestAccounts" });
         let dir = window.ethereum.selectedAddress;
         this.clientAdress = dir.slice(0, 5) + ".." + dir.slice(-3);
@@ -126,23 +128,20 @@ export default {
     },
   },
   mounted() {
+    let dir;
     let ctx = this;
-    if (typeof window.ethereum !== "undefined") {
-      console.log("MetaMask is installed!");
-      if (window.ethereum.selectedAddress == undefined) {
-        this.loginMetaMask();
-      } else {
-        let dir = window.ethereum.selectedAddress;
-        this.clientAdress = dir.slice(0, 5) + ".." + dir.slice(-3);
-      }
+    if (window.ethereum.selectedAddress == undefined) {
+      this.loged = false;
     } else {
-      alert("MetaMask not installed  :(");
+      dir = window.ethereum.selectedAddress;
+      this.clientAdress = dir.slice(0, 5) + ".." + dir.slice(-3);
+      this.loged = true;
     }
     window.ethereum.on("accountsChanged", function (accounts) {
-      if (window.ethereum.selectedAddress == undefined) {
+      if (accounts[0] == undefined) {
         ctx.loged = false;
       } else {
-        let dir = accounts[0];
+        dir = accounts[0];
         ctx.clientAdress = dir.slice(0, 5) + ".." + dir.slice(-3);
         ctx.loged = true;
       }

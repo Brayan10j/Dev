@@ -1,8 +1,6 @@
 <template>
   <div>
     <v-container id="map" fluid fill-heigh style="height: 700px" />
-    <v-btn @click="loginMetaMask">MetaMask login</v-btn>
-    <v-btn @click="loginBinance">Binance login</v-btn>
     <br />
     <br />
     <v-row v-if="multi">
@@ -58,10 +56,6 @@ export default {
     multipleList: [],
   }),
   methods: {
-    loginMetaMask() {
-      window.ethereum.request({ method: "eth_requestAccounts" });
-      console.log(window.ethereum.selectedAddress);
-    },
     loginBinance() {
       window.BinanceChain.request({ method: "eth_accounts" });
     },

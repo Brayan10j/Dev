@@ -1,4 +1,5 @@
 import colors from 'vuetify/es5/util/colors'
+import redirectSSL from 'redirect-ssl'; 
 
 export default {
   // Global page headers: https://go.nuxtjs.dev/config-head
@@ -38,7 +39,7 @@ export default {
     // https://go.nuxtjs.dev/vuetify
     '@nuxtjs/vuetify',
   ],
-
+  serverMiddleware: ["~/api/", redirectSSL.create({enabled: process.env.NODE_ENV === 'production'})],
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
     // https://go.nuxtjs.dev/axios
