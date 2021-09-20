@@ -43,6 +43,10 @@
 
 <script>
 import geojson2h3 from "geojson2h3";
+import { ScatterplotLayer } from "@deck.gl/layers";
+import { MapboxLayer } from "@deck.gl/mapbox";
+import { H3HexagonLayer } from "@deck.gl/geo-layers";
+import {HexagonLayer} from '@deck.gl/aggregation-layers';
 
 export default {
   data: () => ({
@@ -61,6 +65,16 @@ export default {
     },
   },
   mounted() {
+    // NEW
+    var hexagonLayer = new MapboxLayer({
+      type: HexagonLayer,
+      id: "heatmap",
+      data: [{ position: [0, 0], size: 10000 }],
+      getPosition: d => d.position,
+      getRadius: d => d.size,
+      getColor: [0, 0, 255],
+
+    });
     var ctx = this;
     const mapboxgl = require("mapbox-gl");
     // const MapboxGeocoder = require("mapbox-gl-geocoder"); unstall
@@ -144,6 +158,7 @@ export default {
 
     map.addControl(new mapboxgl.NavigationControl());
     map.on("load", function () {
+      map.addLayer(hexagonLayer);
       var layers = map.getStyle().layers;
       var labelLayerId;
       for (var i = 0; i < layers.length; i++) {
