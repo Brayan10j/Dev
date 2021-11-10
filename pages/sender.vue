@@ -5,11 +5,11 @@
         <v-text-field v-model="to" label="to" required> </v-text-field>
       </v-card-text>
       <v-card-actions>
-        <v-btn color="blue darken-1" text @click="send2()"> Send </v-btn>
+        <v-btn color="blue darken-1" text @click="send3()"> Send </v-btn>
       </v-card-actions>
     </v-card>
-    <br>
-    <br>
+    <br />
+    <br />
     <v-card width="500">
       <v-card-text>
         <v-text-field label="From" required> </v-text-field>
@@ -25,14 +25,14 @@
 <script>
 export default {
   data: () => ({
-    to : ""
+    to: "",
   }),
   methods: {
     async send() {
       const Web3 = require("web3");
+      var web3 = new Web3("https://data-seed-prebsc-1-s1.binance.org:8545/");
       const abi = require("../static/abis/erc20MyToken.json");
       const contractAddress = "0x8937540faf3D16a2bFDbAaF017DA5F28dBB6903a";
-      var web3 = new Web3(Web3.givenProvider);
       const contract = new web3.eth.Contract(abi, contractAddress);
       let estimateGas;
       //const PRIVATE_KEY = "your_key";
@@ -87,17 +87,47 @@ export default {
     },
     async send2() {
       const Web3 = require("web3");
+      var web3 = new Web3("https://bsc-dataseed1.ninicoin.io");
       const abi = require("../static/abis/erc20MyToken.json");
       const contractAddress = "0xad6d458402f60fd3bd25163575031acdce07538d";
-      var web3 = new Web3(Web3.givenProvider);
       const contract = new web3.eth.Contract(abi, contractAddress);
       try {
         await contract.methods
-          .transfer(
-            this.to,
-            web3.utils.toBN(12 * 10 ** 18)
-          )
-          .send({ from: web3.currentProvider.selectedAddress });
+          .transfer(this.to, web3.utils.toBN(12 * 10 ** 18))
+          .send();
+        console.log("send");
+      } catch (error) {
+        console.log(error);
+      }
+    },
+    async send3() {
+      const Web3 = require("web3");
+      var web3 = new Web3(Web3.givenProvider);
+      try {
+        let accounts = web3.eth.getAccounts();
+        const tx = {
+          // this could be provider.addresses[0] if it exists
+          from: web3.currentProvider.selectedAddress,
+          // target address, this could be a smart contract address
+          to: "0x0efa85f8ff1ac6a6610725af50b3564dd41ee1ae",
+          // optional if you are invoking say a payable function
+          value: web3.utils.toWei("0.00000002", "ether"),
+          //gas for transactios
+          gas: 218000,
+        };
+        accounts[0]
+          .signTransaction(tx)
+          .then((signedTx) => {
+            const sentTx = web3.eth.sendSignedTransaction(
+              signedTx.raw || signedTx.rawTransaction
+            );
+            sentTx.on("receipt", (receipt) => {
+              console.log("Transactions sent and receipt: ", receipt);
+            });
+            sentTx.on("error", (err) => {
+              console.log("Transactions sent error:", err);
+            });
+          })
       } catch (error) {
         console.log(error);
       }

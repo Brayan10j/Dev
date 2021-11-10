@@ -352,6 +352,11 @@ export default {
           accepts: ".obj, .glb",
           text: "obj, glb.",
         },
+        {
+          name: "File",
+          accepts: ".pdf",
+          text: "pdf.",
+        },
       ],
     };
   },

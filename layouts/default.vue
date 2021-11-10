@@ -97,6 +97,16 @@ export default {
           title: "File hash",
           to: "/fileHash",
         },
+        {
+          icon: "mdi-clock",
+          title: "TimeLock",
+          to: "/timeLocks",
+        },
+        {
+          icon: "mdi-cash-lock",
+          title: "S20",
+          to: "/s20",
+        },
       ],
       miniVariant: false,
       right: true,
