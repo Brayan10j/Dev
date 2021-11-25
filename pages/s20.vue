@@ -4,10 +4,27 @@
       <div class="text-h1 mb-6 text-center">{{ marketcap.toFixed(2) }}</div>
       <div class="text-h5 mb-6 text-center">Estimate ganancies</div>
     </section>
+    <br>
+    <br>
+    <section>
+      <v-row>
+        <v-col v-for="(item, i ) in coins" :key="i">
+          <v-card class="mx-auto" width="120">
+            <v-card-text>
+              <v-img :src="item.image">
+
+              </v-img>
+              <h5>{{(item.price_change_percentage_24h.toFixed(2))}} %(24h)</h5>
+            </v-card-text>
+            
+          </v-card>
+        </v-col>
+      </v-row>
+    </section>
     <section>
       <v-row>
         <v-col>
-          <v-card width="500">
+          <v-card >
             <v-card-title>
               <span class="text-h5">INDEX FUND</span>
             </v-card-title>
@@ -147,6 +164,7 @@ export default {
     totalSupply: 0,
     tokens: 0,
     tokensTeam: 0,
+    coins: []
   }),
   methods: {
     async buy() {
@@ -194,6 +212,7 @@ export default {
       let { data } = await this.$axios.get(
         "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=5&page=1&sparkline=false"
       );
+      this.coins = data
       let percentChange = 0;
       data.forEach((element) => {
         percentChange = percentChange + element.price_change_percentage_24h;
